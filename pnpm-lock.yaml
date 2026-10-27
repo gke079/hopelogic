@@ -89,6 +89,9 @@ importers:
       localforage:
         specifier: ^1.10.0
         version: 1.10.0
+      lodash.debounce:
+        specifier: ^4.0.8
+        version: 4.0.8
       lz-string:
         specifier: ^1.5.0
         version: 1.5.0
@@ -104,6 +107,9 @@ importers:
       pako:
         specifier: ^2.1.0
         version: 2.2.0
+      prop-types:
+        specifier: ^15.8.1
+        version: 15.8.1
       react:
         specifier: ^19.2.8
         version: 19.3.1
@@ -146,6 +152,9 @@ importers:
       redux-thunk:
         specifier: ^3.1.0
         version: 3.1.0(redux@5.0.1)
+      rxjs:
+        specifier: ^7.8.2
+        version: 7.8.2
       ua-parser-js:
         specifier: ^1.0.38
         version: 1.0.41
