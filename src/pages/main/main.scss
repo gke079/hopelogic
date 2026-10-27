@@ -214,6 +214,87 @@
     }
 }
 
+.utility-tab-panel {
+    min-height: calc(100vh - 15rem);
+    padding: 4.8rem clamp(2rem, 6vw, 8rem);
+    background: var(--general-main-1);
+
+    &__intro {
+        max-width: 68rem;
+        margin-bottom: 3.2rem;
+    }
+
+    &__eyebrow {
+        display: block;
+        margin-bottom: 0.8rem;
+        color: var(--text-less-prominent);
+        font-size: 1.2rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+
+    h2 {
+        margin: 0 0 0.8rem;
+        color: var(--text-prominent);
+        font-size: 3.2rem;
+        line-height: 1.15;
+    }
+
+    p {
+        margin: 0;
+        color: var(--text-less-prominent);
+        font-size: 1.5rem;
+        line-height: 1.5;
+    }
+
+    &__grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 1.6rem;
+        max-width: 100rem;
+    }
+
+    &__card {
+        min-height: 13rem;
+        padding: 2rem;
+        border: 1px solid var(--general-section-2);
+        border-radius: 1.2rem;
+        background: var(--general-section-1);
+
+        h3 {
+            margin: 1.6rem 0 0.6rem;
+            color: var(--text-prominent);
+            font-size: 1.6rem;
+        }
+
+        p {
+            font-size: 1.3rem;
+        }
+    }
+
+    &__card-dot {
+        display: block;
+        width: 0.8rem;
+        height: 0.8rem;
+        border-radius: 50%;
+        background: var(--button-primary-default);
+    }
+
+    @include mobile-or-tablet-screen {
+        min-height: calc(100vh - 11rem);
+        padding: 3.2rem 1.6rem;
+
+        h2 {
+            font-size: 2.4rem;
+        }
+
+        &__grid {
+            grid-template-columns: 1fr;
+        }
+    }
+}
+
 .animation__wrapper {
     .animation {
         &__button#db-animation {

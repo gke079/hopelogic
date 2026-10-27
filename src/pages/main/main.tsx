@@ -42,6 +42,7 @@ import RunPanel from '../../components/run-panel';
 import ChartModal from '../chart/chart-modal';
 import Dashboard from '../dashboard';
 import RunStrategy from '../dashboard/run-strategy';
+import UtilityTabs from './utility-tabs';
 import './main.scss';
 
 const ChartWrapper = lazy(() => import('../chart/chart-wrapper'));
@@ -78,7 +79,7 @@ const AppWrapper = observer(() => {
     const { clear } = summary_card;
     const { DASHBOARD, BOT_BUILDER } = DBOT_TABS;
     const init_render = React.useRef(true);
-    const hash = ['dashboard', 'bot_builder', 'chart', 'tutorial'];
+    const hash = ['dashboard', 'bot_builder', 'chart', 'tutorial', 'signal', 'free_bots', 'automation', 'analysis'];
     const { isDesktop } = useDevice();
     const location = useLocation();
     const navigate = useNavigate();
@@ -451,6 +452,18 @@ const AppWrapper = observer(() => {
                                         <Tutorial handleTabChange={handleTabChange} />
                                     </Suspense>
                                 </div>
+                            </div>
+                            <div label={<Localize i18n_default_text='Signal' />} id='id-signal'>
+                                <UtilityTabs kind='signal' />
+                            </div>
+                            <div label={<Localize i18n_default_text='Free Bots' />} id='id-free-bots'>
+                                <UtilityTabs kind='free-bots' />
+                            </div>
+                            <div label={<Localize i18n_default_text='Automation' />} id='id-automation'>
+                                <UtilityTabs kind='automation' />
+                            </div>
+                            <div label={<Localize i18n_default_text='Analysis' />} id='id-analysis'>
+                                <UtilityTabs kind='analysis' />
                             </div>
                         </Tabs>
                         {!isDesktop && right_tab_shadow && <span className='tabs-shadow tabs-shadow--right' />}{' '}
