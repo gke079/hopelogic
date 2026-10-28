@@ -6,6 +6,7 @@ import { observer as globalObserver } from '../../../utils/observer';
 import { api_base } from '../../api/api-base';
 import Interface from '../Interface';
 import { createScope } from './cliTools';
+import { beforePurchaseGate, releasePausedBot, resetExecutionControl } from './execution-control';
 
 JSInterpreter.prototype.takeStateSnapshot = function () {
     const newStateStack = cloneThorough(this.stateStack, undefined, undefined, undefined, true);
@@ -39,6 +40,9 @@ const Interpreter = () => {
     let bot = Interface($scope);
     let interpreter = {};
     let onFinish;
+    // Tracks the bot's trade cycle so Normal mode can wait between contracts.
+    let last_watch_name = null;
+    let has_completed_trade = false;
 
     $scope.observer.register('REVERT', watchName =>
         revert(watchName === 'before' ? $scope.beforeState : $scope.duringState)
@@ -140,8 +144,16 @@ const Interpreter = () => {
         js_interpreter.setProperty(
             scope,
             'watch',
-            createAsync(js_interpreter, watchName => {
+            createAsync(js_interpreter, async watchName => {
                 const { watch } = bot.getInterface();
+
+                if (watchName === 'before') {
+                    const is_new_cycle = has_completed_trade && last_watch_name !== 'before';
+                    await beforePurchaseGate({ is_new_cycle, isStopped: () => $scope.stopped });
+                } else {
+                    has_completed_trade = true;
+                }
+                last_watch_name = watchName;
 
                 if (timeMachineEnabled(bot)) {
                     const snapshot = interpreter.takeStateSnapshot();
@@ -204,6 +216,7 @@ const Interpreter = () => {
             try {
                 $scope.stopped = true;
                 $scope.is_error_triggered = false;
+                releasePausedBot();
                 globalObserver.emit('bot.stop');
                 const { ticksService } = $scope;
                 // Unsubscribe previous ticks_history subscription
@@ -270,6 +283,9 @@ const Interpreter = () => {
 
             $scope.observer.register('Error', onError);
 
+            resetExecutionControl();
+            last_watch_name = null;
+            has_completed_trade = false;
             interpreter = new JSInterpreter(code, initFunc);
             onFinish = resolve;
 

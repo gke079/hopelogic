@@ -32,8 +32,10 @@ import {
 } from '@/utils/trade-type-modal-handler';
 import {
     LabelPairedChartLineCaptionRegularIcon,
+    LabelPairedChartMixedCaptionRegularIcon,
     LabelPairedObjectsColumnCaptionRegularIcon,
     LabelPairedPuzzlePieceTwoCaptionBoldIcon,
+    LabelPairedGridCaptionRegularIcon,
 } from '@deriv/quill-icons/LabelPaired';
 import { LegacyGuide1pxIcon } from '@deriv/quill-icons/Legacy';
 import { Localize, localize } from '@deriv-com/translations';
@@ -46,6 +48,8 @@ import './main.scss';
 
 const ChartWrapper = lazy(() => import('../chart/chart-wrapper'));
 const Tutorial = lazy(() => import('../tutorials'));
+const FreeBots = lazy(() => import('../free-bots'));
+const Analysis = lazy(() => import('../analysis'));
 
 const AppWrapper = observer(() => {
     const { connectionStatus } = useApiBase();
@@ -78,7 +82,7 @@ const AppWrapper = observer(() => {
     const { clear } = summary_card;
     const { DASHBOARD, BOT_BUILDER } = DBOT_TABS;
     const init_render = React.useRef(true);
-    const hash = ['dashboard', 'bot_builder', 'chart', 'tutorial'];
+    const hash = ['dashboard', 'bot_builder', 'chart', 'tutorial', 'free_bots', 'analysis'];
     const { isDesktop } = useDevice();
     const location = useLocation();
     const navigate = useNavigate();
@@ -144,7 +148,8 @@ const AppWrapper = observer(() => {
 
     React.useEffect(() => {
         const el_dashboard = document.getElementById('id-dbot-dashboard');
-        const el_tutorial = document.getElementById('id-tutorials');
+        // The last tab marks the right edge of the scrollable mobile tab bar.
+        const el_tutorial = document.getElementById(TAB_IDS[TAB_IDS.length - 1]);
 
         const observer_dashboard = new window.IntersectionObserver(
             ([entry]) => {
@@ -451,6 +456,42 @@ const AppWrapper = observer(() => {
                                         <Tutorial handleTabChange={handleTabChange} />
                                     </Suspense>
                                 </div>
+                            </div>
+                            <div
+                                label={
+                                    <>
+                                        <LabelPairedGridCaptionRegularIcon
+                                            height='24px'
+                                            width='24px'
+                                            fill='var(--text-general)'
+                                        />
+                                        <Localize i18n_default_text='Bots' />
+                                    </>
+                                }
+                                id='id-free-bots'
+                            >
+                                <Suspense fallback={<ChunkLoader message={localize('Please wait, loading bots...')} />}>
+                                    <FreeBots />
+                                </Suspense>
+                            </div>
+                            <div
+                                label={
+                                    <>
+                                        <LabelPairedChartMixedCaptionRegularIcon
+                                            height='24px'
+                                            width='24px'
+                                            fill='var(--text-general)'
+                                        />
+                                        <Localize i18n_default_text='Analysis' />
+                                    </>
+                                }
+                                id='id-analysis'
+                            >
+                                <Suspense
+                                    fallback={<ChunkLoader message={localize('Please wait, loading analysis...')} />}
+                                >
+                                    {active_tab === DBOT_TABS.ANALYSIS && <Analysis />}
+                                </Suspense>
                             </div>
                         </Tabs>
                         {!isDesktop && right_tab_shadow && <span className='tabs-shadow tabs-shadow--right' />}{' '}
