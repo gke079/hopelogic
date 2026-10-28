@@ -7,6 +7,12 @@ import { contract_stages, TContractStage } from '@/constants/contract-stage';
 import { run_panel } from '@/constants/run-panel';
 import { ErrorTypes, MessageTypes, observer, unrecoverable_errors } from '@/external/bot-skeleton';
 import { getSelectedTradeType } from '@/external/bot-skeleton/scratch/utils';
+import {
+    EXECUTION_MODES,
+    pauseBot,
+    resumeBot,
+    setExecutionMode as setEngineExecutionMode,
+} from '@/external/bot-skeleton/services/tradeEngine/utils/execution-control';
 import { handleBackendError, isBackendError } from '@/utils/error-handler';
 // import { journalError, switch_account_notification } from '@/utils/bot-notifications';
 import GTM from '@/utils/gtm';
@@ -25,6 +31,17 @@ export type TContractState = {
     id: string;
 };
 
+const EXECUTION_MODE_STORAGE_KEY = 'bot_execution_mode';
+
+export type TExecutionMode = (typeof EXECUTION_MODES)[keyof typeof EXECUTION_MODES];
+
+const getStoredExecutionMode = (): TExecutionMode => {
+    const stored = localStorage.getItem(EXECUTION_MODE_STORAGE_KEY);
+    const mode = stored === EXECUTION_MODES.FAST ? EXECUTION_MODES.FAST : EXECUTION_MODES.NORMAL;
+    setEngineExecutionMode(mode);
+    return mode;
+};
+
 export default class RunPanelStore {
     root_store: RootStore;
     dbot: TDbot;
@@ -39,6 +56,10 @@ export default class RunPanelStore {
             dialog_options: observable,
             has_open_contract: observable,
             is_running: observable,
+            is_paused: observable,
+            execution_mode: observable,
+            togglePause: action,
+            setExecutionMode: action,
             is_statistics_info_modal_open: observable,
             is_drawer_open: observable,
             is_dialog_open: observable,
@@ -103,6 +124,8 @@ export default class RunPanelStore {
     dialog_options = {};
     has_open_contract = false;
     is_running = false;
+    is_paused = false;
+    execution_mode: TExecutionMode = getStoredExecutionMode();
     is_statistics_info_modal_open = false;
     is_drawer_open = true;
     is_dialog_open = false;
@@ -206,6 +229,7 @@ export default class RunPanelStore {
         );
         runInAction(() => {
             this.setIsRunning(true);
+            this.is_paused = false;
             ui.setPromptHandler(true);
             this.toggleDrawer(true);
             this.run_id = `run-${Date.now()}`;
@@ -761,6 +785,27 @@ export default class RunPanelStore {
 
     setIsRunning = (is_running: boolean) => {
         this.is_running = is_running;
+        if (!is_running) this.is_paused = false;
+    };
+
+    togglePause = () => {
+        if (!this.is_running) return;
+        this.is_paused = !this.is_paused;
+        if (this.is_paused) {
+            pauseBot();
+            observer.emit('ui.log.notify', {
+                message: localize('Bot paused. It will not place new trades until you resume.'),
+            });
+        } else {
+            resumeBot();
+            observer.emit('ui.log.notify', { message: localize('Bot resumed.') });
+        }
+    };
+
+    setExecutionMode = (mode: TExecutionMode) => {
+        this.execution_mode = mode;
+        setEngineExecutionMode(mode);
+        localStorage.setItem(EXECUTION_MODE_STORAGE_KEY, mode);
     };
 
     onMount = () => {

@@ -4,8 +4,13 @@ import { observer } from 'mobx-react-lite';
 import ContractResultOverlay from '@/components/contract-result-overlay';
 import { DBOT_TABS } from '@/constants/bot-contents';
 import { contract_stages } from '@/constants/contract-stage';
+import { EXECUTION_MODES } from '@/external/bot-skeleton/services/tradeEngine/utils/execution-control';
 import { useStore } from '@/hooks/useStore';
-import { LabelPairedPlayLgFillIcon, LabelPairedSquareLgFillIcon } from '@deriv/quill-icons/LabelPaired';
+import {
+    LabelPairedPauseLgFillIcon,
+    LabelPairedPlayLgFillIcon,
+    LabelPairedSquareLgFillIcon,
+} from '@deriv/quill-icons/LabelPaired';
 import { Localize, localize } from '@deriv-com/translations';
 import { useDevice } from '@deriv-com/ui';
 /* [AI] - Analytics event tracking removed - see migrate-docs/MONITORING_PACKAGES.md for re-implementation guide */
@@ -28,8 +33,18 @@ const TradeAnimation = observer(({ className, should_show_overlay }: TTradeAnima
     const { isMobile } = useDevice();
 
     const { is_contract_completed, profit } = summary_card;
-    const { contract_stage, is_stop_button_visible, is_stop_button_disabled, onRunButtonClick, onStopBotClick } =
-        run_panel;
+    const {
+        contract_stage,
+        execution_mode,
+        is_paused,
+        is_running,
+        is_stop_button_visible,
+        is_stop_button_disabled,
+        onRunButtonClick,
+        onStopBotClick,
+        setExecutionMode,
+        togglePause,
+    } = run_panel;
     const [shouldDisable, setShouldDisable] = React.useState(false);
     const is_unavailable_for_payment_agent = false;
 
@@ -216,6 +231,27 @@ const TradeAnimation = observer(({ className, should_show_overlay }: TTradeAnima
                     {button_props.text}
                 </Button>
             )}
+            {is_running && (
+                <button
+                    type='button'
+                    id='db-animation__pause-button'
+                    className={classNames('animation__pause-button', {
+                        'animation__pause-button--paused': is_paused,
+                    })}
+                    onClick={togglePause}
+                    aria-pressed={is_paused}
+                    title={is_paused ? localize('Resume bot') : localize('Pause bot')}
+                >
+                    {is_paused ? (
+                        <LabelPairedPlayLgFillIcon fill='currentColor' width='16px' height='16px' />
+                    ) : (
+                        <LabelPairedPauseLgFillIcon fill='currentColor' width='16px' height='16px' />
+                    )}
+                    <span>
+                        {is_paused ? <Localize i18n_default_text='Resume' /> : <Localize i18n_default_text='Pause' />}
+                    </span>
+                </button>
+            )}
             <div
                 className={classNames('animation__container', className, {
                     'animation--running': contract_stage > 0,
@@ -225,7 +261,11 @@ const TradeAnimation = observer(({ className, should_show_overlay }: TTradeAnima
             >
                 {show_overlay && <ContractResultOverlay profit={profit} />}
                 <span className='animation__text'>
-                    <ContractStageText contract_stage={contract_stage} />
+                    {is_paused ? (
+                        <Localize i18n_default_text='Paused' />
+                    ) : (
+                        <ContractStageText contract_stage={contract_stage} />
+                    )}
                 </span>
                 <div className='animation__progress'>
                     <div className='animation__progress-line'>
@@ -235,6 +275,30 @@ const TradeAnimation = observer(({ className, should_show_overlay }: TTradeAnima
                         <CircularWrapper key={`status_class-${status_class}-${i}`} className={status_class} />
                     ))}
                 </div>
+            </div>
+            <div className='animation__mode' role='radiogroup' aria-label={localize('Execution mode')}>
+                {[
+                    { value: EXECUTION_MODES.NORMAL, label: localize('Normal') },
+                    { value: EXECUTION_MODES.FAST, label: localize('Fast') },
+                ].map(mode => (
+                    <button
+                        key={mode.value}
+                        type='button'
+                        role='radio'
+                        aria-checked={execution_mode === mode.value}
+                        className={classNames('animation__mode-option', {
+                            'animation__mode-option--active': execution_mode === mode.value,
+                        })}
+                        title={
+                            mode.value === EXECUTION_MODES.FAST
+                                ? localize('Fast: starts the next trade as soon as the previous one closes')
+                                : localize('Normal: waits 2 seconds between trades')
+                        }
+                        onClick={() => setExecutionMode(mode.value)}
+                    >
+                        {mode.label}
+                    </button>
+                ))}
             </div>
         </div>
     );
