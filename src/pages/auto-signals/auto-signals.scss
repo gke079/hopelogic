@@ -161,6 +161,20 @@
         color: var(--text-loss-danger);
     }
 
+    &__tv-chart {
+        height: 44rem;
+        border-radius: 8px;
+        overflow: hidden;
+        background: var(--general-section-1);
+
+        iframe {
+            display: block;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+    }
+
     &__chart {
         padding: 1.2rem;
         border-radius: 8px;
@@ -169,7 +183,7 @@
         svg {
             display: block;
             width: 100%;
-            height: 36rem;
+            height: 9rem;
         }
 
         &--empty {

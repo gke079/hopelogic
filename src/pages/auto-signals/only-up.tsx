@@ -3,8 +3,9 @@ import classNames from 'classnames';
 import { observer } from 'mobx-react-lite';
 import { useStore } from '@/hooks/useStore';
 import { Localize, localize } from '@deriv-com/translations';
-import CandleMacdChart from './candle-macd-chart';
+import MacdStrip from './macd-strip';
 import { calculateMacd, evaluateOnlyUp, getHistogramColors, THistogramColor, TSignalVerdict } from './macd';
+import TradingViewChart from './trading-view-chart';
 import { useCandles } from './use-candles';
 
 export const ENTRY_SECONDS_LEFT = 7;
@@ -212,7 +213,8 @@ const OnlyUp = observer(() => {
 
             {error && <p className='only-up__error'>{error}</p>}
 
-            <CandleMacdChart candles={candles} histogram={histogram} colors={colors} />
+            <TradingViewChart symbol={symbol} granularity={granularity} />
+            <MacdStrip candles={candles} histogram={histogram} colors={colors} />
 
             <div className='only-up__log'>
                 <h3>
