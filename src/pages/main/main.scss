@@ -27,6 +27,23 @@
     }
 }
 
+// [AI] Deriv Advanced (TradingView) chart shown inside the Charts tab
+.main__trading-view {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    margin-top: 1.6rem;
+
+    .main__trading-view-chart {
+        height: 48rem;
+
+        iframe {
+            border: 1px solid var(--border-normal);
+            border-radius: 4px;
+        }
+    }
+}
+
 .main {
     display: flex;
     overflow: hidden;
