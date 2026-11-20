@@ -8,7 +8,10 @@ import { generateOAuthURL } from '@/components/shared';
 import DesktopWrapper from '@/components/shared_ui/desktop-wrapper';
 import Dialog from '@/components/shared_ui/dialog';
 import MobileWrapper from '@/components/shared_ui/mobile-wrapper';
+import Button from '@/components/shared_ui/button';
 import Tabs from '@/components/shared_ui/tabs/tabs';
+import Text from '@/components/shared_ui/text';
+import TradingViewComponent from '@/components/trading-view-chart/trading-view';
 import TradeTypeConfirmationModal from '@/components/trade-type-confirmation-modal';
 import TradingViewModal from '@/components/trading-view-chart/trading-view-modal';
 import { DBOT_TABS, TAB_IDS } from '@/constants/bot-contents';
@@ -34,6 +37,7 @@ import {
     LabelPairedChartLineCaptionRegularIcon,
     LabelPairedObjectsColumnCaptionRegularIcon,
     LabelPairedPuzzlePieceTwoCaptionBoldIcon,
+    LabelPairedSignalCaptionRegularIcon,
 } from '@deriv/quill-icons/LabelPaired';
 import { LegacyGuide1pxIcon } from '@deriv/quill-icons/Legacy';
 import { Localize, localize } from '@deriv-com/translations';
@@ -46,10 +50,11 @@ import './main.scss';
 
 const ChartWrapper = lazy(() => import('../chart/chart-wrapper'));
 const Tutorial = lazy(() => import('../tutorials'));
+const AutoSignals = lazy(() => import('../auto-signals'));
 
 const AppWrapper = observer(() => {
-    const { connectionStatus } = useApiBase();
-    const { dashboard, load_modal, run_panel, quick_strategy, summary_card, blockly_store } = useStore();
+    const { connectionStatus, activeLoginid, isAuthorizing } = useApiBase();
+    const { dashboard, load_modal, run_panel, quick_strategy, summary_card, blockly_store, client } = useStore();
     const { is_loading } = blockly_store;
     const {
         active_tab,
@@ -78,7 +83,7 @@ const AppWrapper = observer(() => {
     const { clear } = summary_card;
     const { DASHBOARD, BOT_BUILDER } = DBOT_TABS;
     const init_render = React.useRef(true);
-    const hash = ['dashboard', 'bot_builder', 'chart', 'tutorial'];
+    const hash = ['dashboard', 'bot_builder', 'chart', 'tutorial', 'auto_signals'];
     const { isDesktop } = useDevice();
     const location = useLocation();
     const navigate = useNavigate();
@@ -146,6 +151,8 @@ const AppWrapper = observer(() => {
         const el_dashboard = document.getElementById('id-dbot-dashboard');
         const el_tutorial = document.getElementById('id-tutorials');
 
+        if (!el_dashboard || !el_tutorial) return;
+
         const observer_dashboard = new window.IntersectionObserver(
             ([entry]) => {
                 if (entry.isIntersecting) {
@@ -176,6 +183,9 @@ const AppWrapper = observer(() => {
         observer_dashboard.observe(el_dashboard);
         observer_tutorial.observe(el_tutorial);
     });
+
+    // [AI] Tabs are only available after logging in.
+    const is_logged_in = Boolean(activeLoginid) || client.is_logged_in;
 
     React.useEffect(() => {
         if (connectionStatus !== CONNECTION_STATUS.OPENED) {
@@ -366,6 +376,50 @@ const AppWrapper = observer(() => {
         }
     };
     // [/AI]
+
+    // [AI] Login gate — tabs are only accessible after logging in.
+    if (!is_logged_in) {
+        const isAuthConfigured = Boolean(process.env.NEXT_PUBLIC_DERIV_APP_ID);
+
+        return (
+            <div className='main'>
+                <div className='login-gate'>
+                    {isAuthorizing ? (
+                        <svg
+                            className='login-gate__spinner'
+                            viewBox='0 0 24 24'
+                            fill='none'
+                            xmlns='http://www.w3.org/2000/svg'
+                        >
+                            <circle
+                                cx='12'
+                                cy='12'
+                                r='10'
+                                stroke='currentColor'
+                                strokeWidth='2.5'
+                                strokeLinecap='round'
+                                strokeDasharray='31.416'
+                                strokeDashoffset='10'
+                            />
+                        </svg>
+                    ) : (
+                        <>
+                            <Text as='h2' size='m' weight='bold' color='prominent' align='center'>
+                                <Localize i18n_default_text='Log in to continue' />
+                            </Text>
+                            <Text as='p' size='xs' color='less-prominent' align='center'>
+                                <Localize i18n_default_text='Log in with your Deriv account to access the Dashboard, Bot Builder, Charts, Tutorials and Auto Signals tabs.' />
+                            </Text>
+                            <Button primary disabled={!isAuthConfigured} onClick={handleLoginGeneration}>
+                                <Localize i18n_default_text='Log in' />
+                            </Button>
+                        </>
+                    )}
+                </div>
+            </div>
+        );
+    }
+    // [/AI]
     return (
         <React.Fragment>
             <div className='main'>
@@ -427,6 +481,14 @@ const AppWrapper = observer(() => {
                                 >
                                     <ChartWrapper show_digits_stats={false} />
                                 </Suspense>
+                                <div className='main__trading-view'>
+                                    <Text as='h3' size='xs' weight='bold' color='prominent'>
+                                        <Localize i18n_default_text='Deriv Advanced (TradingView)' />
+                                    </Text>
+                                    <div className='main__trading-view-chart'>
+                                        <TradingViewComponent />
+                                    </div>
+                                </div>
                             </div>
                             <div
                                 label={
@@ -451,6 +513,27 @@ const AppWrapper = observer(() => {
                                         <Tutorial handleTabChange={handleTabChange} />
                                     </Suspense>
                                 </div>
+                            </div>
+                            <div
+                                label={
+                                    <>
+                                        <LabelPairedSignalCaptionRegularIcon
+                                            height='24px'
+                                            width='24px'
+                                            fill='var(--text-general)'
+                                        />
+                                        <Localize i18n_default_text='Auto Signals' />
+                                    </>
+                                }
+                                id='id-auto-signals'
+                            >
+                                <Suspense
+                                    fallback={
+                                        <ChunkLoader message={localize('Please wait, loading auto signals...')} />
+                                    }
+                                >
+                                    <AutoSignals />
+                                </Suspense>
                             </div>
                         </Tabs>
                         {!isDesktop && right_tab_shadow && <span className='tabs-shadow tabs-shadow--right' />}{' '}
