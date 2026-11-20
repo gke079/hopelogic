@@ -44,40 +44,6 @@
     }
 }
 
-// [AI] Login gate shown instead of the tabs when the user is logged out
-.login-gate {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 1.2rem;
-    width: 100%;
-    height: 100%;
-    padding: 1.6rem;
-    text-align: center;
-
-    p {
-        max-width: 48rem;
-    }
-
-    &__spinner {
-        width: 4rem;
-        height: 4rem;
-        color: var(--text-general);
-        animation: login-gate-spin 1s linear infinite;
-    }
-}
-
-@keyframes login-gate-spin {
-    from {
-        transform: rotate(0deg);
-    }
-
-    to {
-        transform: rotate(360deg);
-    }
-}
-
 .main {
     display: flex;
     overflow: hidden;

@@ -8,7 +8,6 @@ import { generateOAuthURL } from '@/components/shared';
 import DesktopWrapper from '@/components/shared_ui/desktop-wrapper';
 import Dialog from '@/components/shared_ui/dialog';
 import MobileWrapper from '@/components/shared_ui/mobile-wrapper';
-import Button from '@/components/shared_ui/button';
 import Tabs from '@/components/shared_ui/tabs/tabs';
 import Text from '@/components/shared_ui/text';
 import TradingViewComponent from '@/components/trading-view-chart/trading-view';
@@ -53,8 +52,8 @@ const Tutorial = lazy(() => import('../tutorials'));
 const AutoSignals = lazy(() => import('../auto-signals'));
 
 const AppWrapper = observer(() => {
-    const { connectionStatus, activeLoginid, isAuthorizing } = useApiBase();
-    const { dashboard, load_modal, run_panel, quick_strategy, summary_card, blockly_store, client } = useStore();
+    const { connectionStatus } = useApiBase();
+    const { dashboard, load_modal, run_panel, quick_strategy, summary_card, blockly_store } = useStore();
     const { is_loading } = blockly_store;
     const {
         active_tab,
@@ -183,9 +182,6 @@ const AppWrapper = observer(() => {
         observer_dashboard.observe(el_dashboard);
         observer_tutorial.observe(el_tutorial);
     });
-
-    // [AI] Tabs are only available after logging in.
-    const is_logged_in = Boolean(activeLoginid) || client.is_logged_in;
 
     React.useEffect(() => {
         if (connectionStatus !== CONNECTION_STATUS.OPENED) {
@@ -375,50 +371,6 @@ const AppWrapper = observer(() => {
             console.error('Failed to generate OAuth URL');
         }
     };
-    // [/AI]
-
-    // [AI] Login gate — tabs are only accessible after logging in.
-    if (!is_logged_in) {
-        const isAuthConfigured = Boolean(process.env.NEXT_PUBLIC_DERIV_APP_ID);
-
-        return (
-            <div className='main'>
-                <div className='login-gate'>
-                    {isAuthorizing ? (
-                        <svg
-                            className='login-gate__spinner'
-                            viewBox='0 0 24 24'
-                            fill='none'
-                            xmlns='http://www.w3.org/2000/svg'
-                        >
-                            <circle
-                                cx='12'
-                                cy='12'
-                                r='10'
-                                stroke='currentColor'
-                                strokeWidth='2.5'
-                                strokeLinecap='round'
-                                strokeDasharray='31.416'
-                                strokeDashoffset='10'
-                            />
-                        </svg>
-                    ) : (
-                        <>
-                            <Text as='h2' size='m' weight='bold' color='prominent' align='center'>
-                                <Localize i18n_default_text='Log in to continue' />
-                            </Text>
-                            <Text as='p' size='xs' color='less-prominent' align='center'>
-                                <Localize i18n_default_text='Log in with your Deriv account to access the Dashboard, Bot Builder, Charts, Tutorials and Auto Signals tabs.' />
-                            </Text>
-                            <Button primary disabled={!isAuthConfigured} onClick={handleLoginGeneration}>
-                                <Localize i18n_default_text='Log in' />
-                            </Button>
-                        </>
-                    )}
-                </div>
-            </div>
-        );
-    }
     // [/AI]
     return (
         <React.Fragment>
