@@ -58,7 +58,8 @@ const Interpreter = () => {
     }
 
     function loop() {
-        if ($scope.stopped || !interpreter.run()) {
+        if ($scope.stopped) return;
+        if (!interpreter.run()) {
             onFinish(interpreter.pseudoToNative(interpreter.value));
         }
     }
@@ -77,12 +78,13 @@ const Interpreter = () => {
 
             func(...function_args.map(arg => js_interpreter.pseudoToNative(arg)))
                 .then(rv => {
+                    if ($scope.stopped) return;
                     callback(js_interpreter.nativeToPseudo(rv));
                     loop();
                 })
                 .catch(e => {
                     // e.error for errors get from API, e for code errors
-                    $scope.observer.emit('Error', e.error || e);
+                    if (!$scope.stopped) $scope.observer.emit('Error', e.error || e);
                 });
         };
 
@@ -160,63 +162,44 @@ const Interpreter = () => {
     }
 
     async function stop() {
-        return new Promise((resolve, reject) => {
-            try {
-                const global_timeouts = globalObserver.getState('global_timeouts') ?? [];
-                const is_timeouts_cancellable = Object.keys(global_timeouts).every(
-                    timeout => global_timeouts[timeout].is_cancellable
-                );
+        const global_timeouts = globalObserver.getState('global_timeouts') ?? [];
+        const is_timeouts_cancellable = Object.values(global_timeouts).every(timeout => timeout.is_cancellable);
 
-                if (!bot.tradeEngine.contractId && is_timeouts_cancellable) {
-                    api_base.is_stopping = true;
-                    // When user is rate limited, allow them to stop the bot immediately
-                    // granted there is no active contract.
-                    global_timeouts.forEach(timeout => clearTimeout(global_timeouts[timeout]));
-                    terminateSession().then(() => {
-                        api_base.is_stopping = false;
+        if (
+            bot.tradeEngine.contractId &&
+            bot.tradeEngine.isSold === false &&
+            !$scope.is_error_triggered &&
+            isMultiplierContract(bot?.tradeEngine?.data?.contract?.contract_type ?? '')
+        ) {
+            await new Promise(resolve => {
+                const onContractStatus = contractStatus => {
+                    if (contractStatus.id === 'contract.sold') {
+                        globalObserver.unregister('contract.status', onContractStatus);
                         resolve();
-                    });
-                } else if (
-                    bot.tradeEngine.isSold === false &&
-                    !$scope.is_error_triggered &&
-                    isMultiplierContract(bot?.tradeEngine?.data?.contract?.contract_type ?? '')
-                ) {
-                    globalObserver.register('contract.status', async contractStatus => {
-                        if (contractStatus.id === 'contract.sold') {
-                            terminateSession().then(() => resolve());
-                        }
-                    });
-                } else {
-                    api_base.is_stopping = true;
-                    terminateSession().then(() => {
-                        api_base.is_stopping = false;
-                        resolve();
-                    });
-                }
-            } catch (e) {
-                reject(e);
+                    }
+                };
+                globalObserver.register('contract.status', onContractStatus);
+            });
+        }
+
+        api_base.is_stopping = true;
+        try {
+            if (!bot.tradeEngine.contractId && is_timeouts_cancellable) {
+                Object.keys(global_timeouts).forEach(timeout => clearTimeout(Number(timeout)));
             }
-        });
+            await terminateSession();
+        } finally {
+            api_base.is_stopping = false;
+        }
     }
 
     async function terminateSession() {
-        return new Promise((resolve, reject) => {
-            try {
-                $scope.stopped = true;
-                $scope.is_error_triggered = false;
-                globalObserver.emit('bot.stop');
-                const { ticksService } = $scope;
-                // Unsubscribe previous ticks_history subscription
-                // Unsubscribe the subscriptions from Proposal, Balance and OpenContract
-                api_base.clearSubscriptions();
-
-                ticksService.unsubscribeFromTicksService().then(() => {
-                    resolve();
-                });
-            } catch (error) {
-                reject(error);
-            }
-        });
+        $scope.stopped = true;
+        $scope.is_error_triggered = false;
+        globalObserver.emit('bot.stop');
+        onFinish?.();
+        api_base.clearSubscriptions();
+        await $scope.ticksService.unsubscribeFromTicksService();
     }
 
     async function unsubscribeFromTicksService() {

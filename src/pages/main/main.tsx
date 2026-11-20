@@ -44,7 +44,7 @@ import Dashboard from '../dashboard';
 import RunStrategy from '../dashboard/run-strategy';
 import './main.scss';
 
-const ChartWrapper = lazy(() => import('../chart/chart-wrapper'));
+const TradingView = lazy(() => import('@/components/trading-view-chart/trading-view'));
 const Tutorial = lazy(() => import('../tutorials'));
 
 const AppWrapper = observer(() => {
@@ -425,7 +425,9 @@ const AppWrapper = observer(() => {
                                 <Suspense
                                     fallback={<ChunkLoader message={localize('Please wait, loading chart...')} />}
                                 >
-                                    <ChartWrapper show_digits_stats={false} />
+                                    <div style={{ height: 'calc(100dvh - 18rem)', minHeight: '320px' }}>
+                                        <TradingView />
+                                    </div>
                                 </Suspense>
                             </div>
                             <div
