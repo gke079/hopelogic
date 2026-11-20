@@ -1,0 +1,14 @@
+.free-bots {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 100%;
+
+    &__content {
+        color: var(--text-general);
+        font-size: 16px;
+        padding: 16px;
+        text-align: center;
+    }
+}
