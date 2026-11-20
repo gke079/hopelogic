@@ -270,7 +270,7 @@ class DBot {
      * JavaScript code that's fed to the interpreter.
      */
     runBot() {
-        if (api_base.is_stopping) return;
+        if (api_base.is_stopping || this.stop_promise) return;
 
         try {
             api_base.is_stopping = false;
@@ -373,13 +373,22 @@ class DBot {
      * that trade will be completed first to reflect correct contract status in UI.
      */
     async stopBot() {
-        if (api_base.is_stopping) return;
+        if (this.stop_promise) return this.stop_promise;
+        if (!this.interpreter) return;
 
+        this.stop_promise = this.stopInterpreter();
+        try {
+            await this.stop_promise;
+        } finally {
+            this.stop_promise = null;
+        }
+    }
+
+    async stopInterpreter() {
         api_base.setIsRunning(false);
 
         await this.interpreter.stop();
         this.is_bot_running = false;
-        this.interpreter = null;
         this.interpreter = Interpreter();
         await this.interpreter.bot.tradeEngine.watchTicks(this.symbol);
         forgetAccumulatorsProposalRequest(this);

@@ -246,7 +246,12 @@ export default class RunPanelStore {
     stopBot = () => {
         const { ui } = this.core;
 
-        this.dbot.stopBot();
+        // Keep cleanup failures in the trading UI instead of leaving a rejected promise.
+        this.dbot.stopBot().catch(() => {
+            this.setIsRunning(false);
+            this.setContractStage(contract_stages.NOT_RUNNING);
+            this.showErrorMessage(localize('Unable to finish stopping the bot. Please check your connection and your open contracts in Reports.'));
+        });
 
         ui.setPromptHandler(false);
 
